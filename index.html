@@ -1,82 +1,58 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Top 5 Juden</title>
+    <title>juden porn ja</title>
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
-    <video id="bg-video" loop playsinline autoplay>
+    <video id="bg-video" loop playsinline autoplay muted>
         <source src="video.mp4" type="video/mp4">
     </video>
 
     <script>
         const video = document.getElementById('bg-video');
-        video.volume = 1.0;
 
-        function attemptPlayWithSound() {
-            video.muted = false;
-            const playPromise = video.play();
-            if (playPromise !== undefined) {
-                playPromise.then(() => {
-                    // Successfully playing with sound!
-                    video.muted = false;
-                }).catch(() => {
-                    // Autoplay with sound temporarily restricted by browser.
-                    // Keep video playing muted, then unlock sound on first movement/interaction
+        // 1. Ensure muted autoplay starts immediately
+        video.muted = true;
+        const startPlay = () => {
+            const promise = video.play();
+            if (promise !== undefined) {
+                promise.catch(() => {
+                    // Fallback retry if needed
                     video.muted = true;
                     video.play().catch(() => {});
                 });
             }
-        }
+        };
 
-        // 1. Try immediately on script execution
-        attemptPlayWithSound();
+        startPlay();
+        window.addEventListener('load', startPlay);
+        document.addEventListener('DOMContentLoaded', startPlay);
 
-        // 2. Try on window load & DOM ready
-        window.addEventListener('load', attemptPlayWithSound);
-        document.addEventListener('DOMContentLoaded', attemptPlayWithSound);
+        // 2. Unmute on first user interaction
+        // Browsers strictly require user gestures (click/touch/keypress) to enable audio
+        function enableAudio() {
+            video.muted = false;
+            video.volume = 1.0;
+            video.play().catch(() => {});
 
-        // 3. Try on any passive user activity (mouse movement, hover, scroll, tab focus, etc.)
-        // User does NOT need to click — simply moving the cursor or hovering triggers sound
-        const triggerEvents = [
-            'mousemove',
-            'pointermove',
-            'mouseover',
-            'mouseenter',
-            'wheel',
-            'scroll',
-            'focus',
-            'visibilitychange',
-            'touchstart',
-            'touchend',
-            'touchmove',
-            'keydown',
-            'pointerdown',
-            'mousedown',
-            'click'
-        ];
-
-        function onActivity() {
-            if (video.muted || video.paused) {
-                attemptPlayWithSound();
+            // Remove listeners once audio is successfully enabled
+            if (!video.muted) {
+                userGestures.forEach(evt => {
+                    window.removeEventListener(evt, enableAudio);
+                });
             }
         }
 
-        triggerEvents.forEach(evt => {
-            window.addEventListener(evt, onActivity, { passive: true });
-            document.addEventListener(evt, onActivity, { passive: true });
+        const userGestures = ['click', 'touchstart', 'touchend', 'pointerdown', 'mousedown', 'keydown'];
+        userGestures.forEach(evt => {
+            window.addEventListener(evt, enableAudio, { passive: true });
         });
-
-        // 4. Periodically check and retry unmuting in case browser policies allow it after load
-        const intervalId = setInterval(() => {
-            if (!video.muted && !video.paused) {
-                clearInterval(intervalId);
-            } else {
-                attemptPlayWithSound();
-            }
-        }, 500);
     </script>
 </body>
+
 </html>
