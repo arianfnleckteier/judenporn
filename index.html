@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Top 5 Juden</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <video id="bg-video" loop playsinline autoplay>
+        <source src="video.mp4" type="video/mp4">
+    </video>
+
+    <script>
+        const video = document.getElementById('bg-video');
+        video.volume = 1.0;
+
+        function attemptPlayWithSound() {
+            video.muted = false;
+            const playPromise = video.play();
+            if (playPromise !== undefined) {
+                playPromise.then(() => {
+                    // Successfully playing with sound!
+                    video.muted = false;
+                }).catch(() => {
+                    // Autoplay with sound temporarily restricted by browser.
+                    // Keep video playing muted, then unlock sound on first movement/interaction
+                    video.muted = true;
+                    video.play().catch(() => {});
+                });
+            }
+        }
+
+        // 1. Try immediately on script execution
+        attemptPlayWithSound();
+
+        // 2. Try on window load & DOM ready
+        window.addEventListener('load', attemptPlayWithSound);
+        document.addEventListener('DOMContentLoaded', attemptPlayWithSound);
+
+        // 3. Try on any passive user activity (mouse movement, hover, scroll, tab focus, etc.)
+        // User does NOT need to click — simply moving the cursor or hovering triggers sound
+        const triggerEvents = [
+            'mousemove',
+            'pointermove',
+            'mouseover',
+            'mouseenter',
+            'wheel',
+            'scroll',
+            'focus',
+            'visibilitychange',
+            'touchstart',
+            'touchend',
+            'touchmove',
+            'keydown',
+            'pointerdown',
+            'mousedown',
+            'click'
+        ];
+
+        function onActivity() {
+            if (video.muted || video.paused) {
+                attemptPlayWithSound();
+            }
+        }
+
+        triggerEvents.forEach(evt => {
+            window.addEventListener(evt, onActivity, { passive: true });
+            document.addEventListener(evt, onActivity, { passive: true });
+        });
+
+        // 4. Periodically check and retry unmuting in case browser policies allow it after load
+        const intervalId = setInterval(() => {
+            if (!video.muted && !video.paused) {
+                clearInterval(intervalId);
+            } else {
+                attemptPlayWithSound();
+            }
+        }, 500);
+    </script>
+</body>
+</html>
